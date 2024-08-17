@@ -29,7 +29,7 @@
       inherit uboot aarch64Image buildImage;
     };
   in {
-    packages.x86_64-linux = {
+    images = {
       nixos-installer-r2s = rockchip inputs.ehfive.packages.aarch64-linux.ubootNanopiR2s;
     };
     nixosConfigurations = {
