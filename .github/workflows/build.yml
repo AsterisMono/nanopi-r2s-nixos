@@ -1,0 +1,17 @@
+name: build-nixos-installer
+on: workflow_dispatch
+jobs:
+  build-engine:
+    name: Build nixos-installer for r2s
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: cachix/cachix-action@v14
+        with:
+          name: asterismono
+          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - run: nix build .#images.nixos-installer-r2s --accept-flake-config

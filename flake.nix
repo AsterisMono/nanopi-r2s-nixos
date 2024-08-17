@@ -21,7 +21,7 @@
   let
     pkgs = import nixpkgs {
       config.allowUnfree = true;
-      system = "aarch64-linux";
+      system = "x86_64-linux";
     };
     buildImage = pkgs.callPackage ./pkgs/build-image {};
     aarch64Image = pkgs.callPackage ./pkgs/aarch64-image.nix {};
