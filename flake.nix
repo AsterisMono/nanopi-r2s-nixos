@@ -2,12 +2,10 @@
   description = "A very basic flake";
 
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
     ehfive = {
       url = "github:EHfive/flakes";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-      };
+      # Do not use follows - use uboot in binary cache
     };
   };
 
@@ -23,29 +21,34 @@
       config.allowUnfree = true;
       system = "x86_64-linux";
     };
-    buildImage = pkgs.callPackage ./pkgs/build-image {};
-    aarch64Image = pkgs.callPackage ./pkgs/aarch64-image.nix {};
-    rockchip = uboot: pkgs.callPackage ./images/rockchip.nix {
-      inherit uboot aarch64Image buildImage;
-    };
-  in {
-    images = {
-      nixos-installer-r2s = rockchip inputs.ehfive.packages.aarch64-linux.ubootNanopiR2s;
-    };
-    nixosConfigurations = {
-      nanopi-r2s = nixpkgs.lib.nixosSystem {
-        system = "aarch64-linux";
-        modules = [
-          ./nixosModules
-          ({ pkgs, ... }: {
-            nixpkgs.overlays = [
-              (final: prev: {
-                inherit (inputs.ehfive.packages.${pkgs.system})
-                  rtl8152-led-ctrl;
-              })
-            ];
+    nixosModules = [
+      ./nixosConfiguration
+      ({ pkgs, ... }: {
+        nixpkgs.overlays = [
+          (final: prev: {
+            inherit (inputs.ehfive.packages.${pkgs.system})
+              rtl8152-led-ctrl;
           })
         ];
+      })
+    ];
+  in {
+    nixosConfigurations = {
+      nanopi-r2s = nixpkgs.lib.nixosSystem {
+        modules = nixosModules;
+        system = "aarch64-linux";
+      };
+    };
+    packages.x86_64-linux = {
+      aarch64Image = pkgs.callPackage ./pkgs/aarch64-image.nix {};
+      nixos-installer-r2s = self.lib.rockchip inputs.ehfive.packages.aarch64-linux.ubootNanopiR2s;
+    };
+    lib = {
+      buildImage = pkgs.callPackage ./pkgs/build-image {};
+      rockchip = uboot: pkgs.callPackage ./images/rockchip.nix {
+        inherit uboot;
+        inherit (self.packages.x86_64-linux) aarch64Image;
+        inherit (self.lib) buildImage;
       };
     };
   };
